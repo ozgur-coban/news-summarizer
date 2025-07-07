@@ -1,2 +1,2 @@
-__all__ = ["TopicExtractor"]
-from .scrape_topics import TopicExtractor
+__all__ = ["TagExtractor"]
+from .scrape_topics import TagExtractor
