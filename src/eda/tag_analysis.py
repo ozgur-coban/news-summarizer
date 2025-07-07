@@ -21,16 +21,24 @@ class TagAnalyzer:
 
         return sorted(unique_topics)
 
-    def process_topic_counts(self, output_path: str):
+    def process_topic_counts_by_date(self, output_path: str):
         """
-        Converts stringified topic lists to actual lists, explodes, counts, and saves frequency.
+        Explodes topics while preserving 'date', counts frequency of each (date, topic) pair,
+        and saves as a CSV.
         """
-        # Convert strings to real lists
+        # Convert stringified topic lists to real lists
         self.df["topics"] = self.df["topics"].apply(ast.literal_eval)
 
-        # Explode and count
-        topic_counts = self.df["topics"].explode().dropna().value_counts().reset_index()
-        topic_counts.columns = ["topic", "count"]
+        # Explode topics while keeping date
+        exploded = self.df.explode("topics").dropna(subset=["topics"])
 
-        # Save to CSV
+        # Group and count (date, topic)
+        topic_counts = (
+            exploded.groupby(["dates", "topics"])
+            .size()
+            .reset_index(name="count")
+            .sort_values(["dates", "count"], ascending=[True, False])
+        )
+
+        # Save the result
         topic_counts.to_csv(output_path, index=False, encoding="utf-8-sig")
