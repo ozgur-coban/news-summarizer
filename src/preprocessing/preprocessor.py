@@ -37,14 +37,6 @@ class Preprocessor:
     def normalize_topic_list(self, topic_list: list[str]) -> list[str]:
         return [self.normalize_text(t) for t in topic_list]
 
-    def apply_normalization(self, column="category"):
-        if self.data is None:
-            raise ValueError("Data not loaded. Call load_data() first.")
-        self.data["normalized_category"] = self.data[column].apply(
-            self.normalize_category_text
-        )
-        return self
-
     def save_data(self, output_path: str):
         if self.data is not None:
             self.data.to_csv(output_path, index=False)
