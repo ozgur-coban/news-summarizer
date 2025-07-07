@@ -1,28 +1,41 @@
+# TODO change if not kept as csv
 import re
 import unicodedata
 import pandas as pd
 
 
 class Preprocessor:
-    def __init__(self, text_path: str):
+    def __init__(self, text_path=None):
         self.text_path = text_path
         self.data = None
 
     def load_data(self):
-        # ! change if not kept as csv
         self.data = pd.read_csv(self.text_path)
         return self
 
-    def normalize_category_text(self, text: str) -> str:
+    def normalize_text(self, text: str) -> str:
         if pd.isna(text):
             return "unknown"
+
+        # 1. Lowercase with Turkish support
         text = text.lower()
+
+        # 2. Normalize to NFKD (decomposes letters like 'İ' into 'i' + dot)
         text = unicodedata.normalize("NFKD", text)
-        text = text.encode("ascii", "ignore").decode("utf-8")
-        # ! may create a problem with turkish characters
-        text = re.sub(r"[^a-z0-9]+", " ", text)
+
+        # 3. Remove all combining marks (e.g., the dot above 'i')
+        text = "".join([c for c in text if not unicodedata.combining(c)])
+
+        # 4. Keep only Turkish letters, numbers, and spaces
+        text = re.sub(r"[^a-z0-9çğıöşü\s]", " ", text)
+
+        # 5. Collapse multiple spaces
         text = re.sub(r"\s+", " ", text).strip()
+
         return text
+
+    def normalize_topic_list(self, topic_list: list[str]) -> list[str]:
+        return [self.normalize_text(t) for t in topic_list]
 
     def apply_normalization(self, column="category"):
         if self.data is None:
