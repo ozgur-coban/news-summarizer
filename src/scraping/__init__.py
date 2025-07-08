@@ -1,2 +1,3 @@
-__all__ = ["TagExtractor"]
+__all__ = ["TagExtractor", "NewsDownloader"]
 from .scrape_topics import TagExtractor
+from .scrape_news import NewsDownloader
