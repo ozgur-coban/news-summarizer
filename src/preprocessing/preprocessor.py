@@ -1,47 +1,58 @@
-# TODO change if not kept as csv
+import pandas as pd
 import re
 import unicodedata
-import pandas as pd
 
 
-class Preprocessor:
-    def __init__(self, text_path=None):
-        self.text_path = text_path
+class TurkishPreprocessor:
+    def __init__(self, path=None):
+        self.path = path
         self.data = None
 
     def load_data(self):
-        self.data = pd.read_csv(self.text_path)
+        if self.path.endswith(".json") or self.path.endswith(".jsonl"):
+            self.data = pd.read_json(self.path, lines=True)
+        else:
+            raise ValueError("Only JSON/JSONL supported for this news workflow.")
         return self
 
-    def normalize_text(self, text: str) -> str:
-        if pd.isna(text):
-            return "unknown"
-
-        # 1. Lowercase with Turkish support
-        text = text.lower()
-
-        # 2. Normalize to NFKD (decomposes letters like 'İ' into 'i' + dot)
+    @staticmethod
+    def normalize_text(text: str) -> str:
+        if not isinstance(text, str) or pd.isna(text):
+            return ""
+        # Turkish lowercasing (basic: works for most practical uses)
+        text = text.replace("I", "ı").replace("İ", "i").lower()
+        # Unicode normalization
         text = unicodedata.normalize("NFKD", text)
-
-        # 3. Remove all combining marks (e.g., the dot above 'i')
+        # Remove combining marks
         text = "".join([c for c in text if not unicodedata.combining(c)])
-
-        # 4. Keep only Turkish letters, numbers, and spaces
+        # Remove non-Turkish letters, numbers, space
         text = re.sub(r"[^a-z0-9çğıöşü\s]", " ", text)
-
-        # 5. Collapse multiple spaces
+        # Collapse multiple spaces
         text = re.sub(r"\s+", " ", text).strip()
-
         return text
 
-    def normalize_topic_list(self, topic_list: list[str]) -> list[str]:
-        return [self.normalize_text(t) for t in topic_list]
-
-    def save_data(self, output_path: str):
-        if self.data is not None:
-            self.data.to_csv(output_path, index=False)
+    @staticmethod
+    def normalize_tags(tag_val):
+        if pd.isna(tag_val) or not tag_val:
+            return []
+        if isinstance(tag_val, list):
+            tags = tag_val
         else:
-            raise ValueError("No data to save.")
+            tags = str(tag_val).split(",")
+        return [TurkishPreprocessor.normalize_text(tag) for tag in tags if tag]
+
+    def normalize_column(self, column, new_column=None):
+        if self.data is None:
+            raise ValueError("Data not loaded")
+        col = new_column or (column + "_norm")
+        if column.lower() == "tags":
+            self.data[col] = self.data[column].apply(self.normalize_tags)
+        else:
+            self.data[col] = self.data[column].apply(self.normalize_text)
+        return self
+
+    def save(self, out_path):
+        self.data.to_json(out_path, orient="records", force_ascii=False, lines=True)
 
     def get_data(self):
         return self.data

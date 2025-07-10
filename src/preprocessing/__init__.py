@@ -1,2 +1,2 @@
-__all__ = ["Preprocessor"]
-from .preprocessor import Preprocessor
+__all__ = ["TurkishPreprocessor"]
+from .preprocessor import TurkishPreprocessor

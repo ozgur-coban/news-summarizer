@@ -4,11 +4,11 @@ import pandas as pd
 import re
 from bs4 import BeautifulSoup
 
-from preprocessing.preprocessor import Preprocessor
+from preprocessing.preprocessor import TurkishPreprocessor
 
 
 class TagExtractor:
-    def __init__(self, html_dir: str, preprocessor: Preprocessor):
+    def __init__(self, html_dir: str, preprocessor: TurkishPreprocessor):
         self.html_dir = html_dir
         self.preprocessor = preprocessor
         self.results = []

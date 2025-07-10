@@ -1,17 +1,40 @@
 import requests
+import json
 from bs4 import BeautifulSoup
+
+"""START_PAGE: Which results page to begin with (e.g., 10th page = older news).
+
+MAX_PAGES: How many pages (batches) to fetch (e.g., set to 10 to get 10x20 = 200 news).
+
+PAGE_SIZE: How many news per page (site default is 20).
+
+CATEGORY_ID: Which category to filter (e.g., 2 is "Gündem").
+
+KEYWORD: Search term ("***" for "all", or a specific word)."""
 
 
 class AA_NewsFetcher:
     BASE_URL = "https://www.aa.com.tr/tr/Search"
     SEARCH_API_URL = "https://www.aa.com.tr/tr/Search/Search"
 
-    def __init__(self, start_page=1, max_pages=1, category_id=2, keyword=""):
+    def __init__(
+        self,
+        start_page=1,
+        max_pages=1,
+        category_id=2,
+        keyword="",
+        save_to_file=False,
+        save_file_path="",
+        is_inplace=True,
+    ):
         self.start_page = start_page
         self.max_pages = max_pages
         self.category_id = category_id
         self.keyword = keyword
         self.results = []
+        self.save_to_file = save_to_file
+        self.save_file_path = save_file_path
+        self.is_inplace = is_inplace
 
     def _get_session_and_token(self):
         s = requests.Session()
@@ -41,17 +64,26 @@ class AA_NewsFetcher:
     def run(self):
         session, csrf_token = self._get_session_and_token()
         self.results.clear()
+        file_mode = "w" if self.is_inplace else "a"
+        file_path = self.save_file_path
+
         for i in range(self.max_pages):
             page = self.start_page + i
             try:
                 result = self._fetch_batch(session, csrf_token, page)
                 docs = result.get("Documents", [])
                 for doc in docs:
-                    print(doc)
                     title = doc.get("Title")
                     link = "https://www.aa.com.tr" + doc.get("Route", "")
                     self.results.append((title, link))
                 print(f"Fetched {len(docs)} articles on page {page}.")
+                if self.save_to_file:
+                    with open(file_path, file_mode, encoding="utf-8") as f:
+                        for doc in docs:
+                            f.write(json.dumps(doc, ensure_ascii=False) + "\n")
+                file_mode = (
+                    "a"  # After first write, always append (prevents re-overwriting)
+                )
             except Exception as e:
                 print(f"Error fetching page {page}:", e)
                 break
