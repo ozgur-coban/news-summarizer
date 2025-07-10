@@ -6,10 +6,13 @@ from bs4 import BeautifulSoup
 
 
 class NewsDownloader:
-    def __init__(self):
+    def __init__(self, date):
         self.api_url = "https://www.aa.com.tr/tr/gundem"  # POST for scrolling
         self.base_url = "https://www.aa.com.tr/tr/gundem"  # GET for static top
-        self.today = datetime.today().strftime("%d.%m.%Y")
+        # self.date = datetime.today().strftime("%d.%m.%Y")
+        # TODO make it a datetime format
+        self.date = date
+
         self.articles = []
 
         self.headers = {
@@ -53,45 +56,61 @@ class NewsDownloader:
             print(f"❌ Unexpected error: {e}")
             return []
 
-    def fetch_all_until_today(self, batch_size=5, delay=5):
+    def fetch_all_until_date(self, batch_size=5, delay=5):
+        # TODO add this some checks, like how far it is from date, so skip some batches to get the approximate batch
         all_articles = []
-        # to not get an retrieval error
         start = 5
+        found_today = False  # <-- this flag controls when we stop
 
-        print(f"📅 Today: {self.today}")
+        print(f"📅 Looking for articles from: {self.date}")
+
         while True:
             batch = self.fetch_batch(start, batch_size)
 
             if not batch:
                 print(f"⛔ No articles found at batch starting from {start}. Stopping.")
                 break
+            for article in batch:
+                if isinstance(article, str):
+                    print("this is the return", article)
+                    print("End of news")
+                    return
 
-            # Filter only today's articles
             todays_batch = [
-                article for article in batch if article.get("StartDate") == self.today
+                article for article in batch if article.get("StartDate") == self.date
             ]
 
-            if not todays_batch:
-                print(
-                    f"⏹️ No more articles from today at batch starting from {start}. Done."
-                )
+            if not found_today:
+                # Keep going until we find the first article from self.date
+                if todays_batch:
+                    found_today = True
+                    print(f"🔍 Found articles from {self.date} at batch {start}")
+                else:
+                    print(
+                        f"⏭️ No articles from {self.date} at batch {start}, continuing..."
+                    )
+                    start += batch_size
+                    sleep(delay + random.uniform(0, 1.5))
+                    continue
+
+            if found_today and not todays_batch:
+                print(f"⏹️ No more articles from {self.date} at batch {start}. Done.")
                 break
 
-            print(
-                f"✅ Batch {start} → Retrieved {len(todays_batch)} articles from today."
-            )
+            print(f"✅ Batch {start} → {len(todays_batch)} articles from {self.date}")
             all_articles.extend(todays_batch)
 
-            # Prepare for next loop
             start += batch_size
             sleep(delay + random.uniform(0, 1.5))
-            for article in all_articles:
-                if "Route" in article and "ID" in article:
-                    article["URL"] = (
-                        f"https://www.aa.com.tr/tr/gundem/{article['Route']}/{article['ID']}"
-                    )
 
-        return all_articles[2:]
+        # Generate URLs
+        for article in all_articles:
+            if "Route" in article and "ID" in article:
+                article["URL"] = (
+                    f"https://www.aa.com.tr/tr/gundem/{article['Route']}/{article['ID']}"
+                )
+
+        return all_articles[2:] if len(all_articles) > 2 else all_articles
 
     def scrape_initial_page(self):
         try:
