@@ -1,3 +1,3 @@
-__all__ = ["TagAnalyzer", "Visualizer"]
-from .tag_analysis import TagAnalyzer
+__all__ = ["Analyzer", "Visualizer"]
+from .metadata_analysis import Analyzer
 from .graph_outputs import Visualizer
