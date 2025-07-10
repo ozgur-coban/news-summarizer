@@ -21,9 +21,14 @@ def main():
     # prep.normalize_column("Title").normalize_column("Summary").normalize_column("Tags")
     # prep.save("../data/processed/metadata_cleaned.jsonl")
     analyzer = Analyzer(source_file="../data/processed/metadata_cleaned_copy.jsonl")
-    analyzer.view_df()
-    analyzer.info()
-    analyzer.shape()
+    # analyzer.view_df()
+    # analyzer.info()
+    # analyzer.shape()
+    # analyzer.display_col("Tags_norm")
+    # tags_and_counts = analyzer.get_tag_counts()
+    analyzer.articles_per_day()  # Print per-day counts
+    analyzer.longest_shortest_day()  # Busiest and slowest day
+    analyzer.plot_trend()
 
 
 if __name__ == "__main__":

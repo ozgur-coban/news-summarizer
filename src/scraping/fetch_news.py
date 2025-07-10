@@ -13,6 +13,7 @@ CATEGORY_ID: Which category to filter (e.g., 2 is "Gündem").
 KEYWORD: Search term ("***" for "all", or a specific word)."""
 
 
+# TODO the fact that everyday new news come in so pages get updated is a big problem for downloading from where you have left
 class AA_NewsFetcher:
     BASE_URL = "https://www.aa.com.tr/tr/Search"
     SEARCH_API_URL = "https://www.aa.com.tr/tr/Search/Search"

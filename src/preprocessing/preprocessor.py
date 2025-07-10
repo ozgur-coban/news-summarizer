@@ -15,10 +15,12 @@ class TurkishPreprocessor:
             raise ValueError("Only JSON/JSONL supported for this news workflow.")
         return self
 
+    # TODO need further preprocessing with stopword removal and stemming in turkish
     @staticmethod
     def normalize_text(text: str) -> str:
         if not isinstance(text, str) or pd.isna(text):
             return ""
+        text = text.replace("\xa0", " ")
         # Turkish lowercasing (basic: works for most practical uses)
         text = text.replace("I", "ı").replace("İ", "i").lower()
         # Unicode normalization
