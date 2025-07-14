@@ -1,3 +1,2 @@
-__all__ = ["TurkishPreprocessor", "TurkishNLTKPreprocessor"]
-from .preprocessor import TurkishPreprocessor
+__all__ = ["TurkishNLTKPreprocessor"]
 from .text_preprocessor import TurkishNLTKPreprocessor

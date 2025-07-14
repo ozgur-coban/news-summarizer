@@ -118,15 +118,3 @@ class Analyzer:
         plt.xlabel("Date")
         plt.tight_layout()
         plt.show()
-
-    # Title and Summary Analysis
-    def most_common_words(self, field="Title_norm", n=20):
-        word_counter = Counter()
-        for text in self.df[field].dropna():
-            words = re.findall(
-                r"\b[\wçğıöşü]+\b", text.lower()
-            )  # Handles Turkish chars
-            word_counter.update(words)
-        print(f"Most common words in {field}:")
-        for word, count in word_counter.most_common(n):
-            print(f"{word}: {count}")

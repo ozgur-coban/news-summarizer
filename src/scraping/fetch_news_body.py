@@ -10,6 +10,7 @@ from fake_useragent import UserAgent
 class AAArticleBodyFetcher:
     BASE_URL = "https://www.aa.com.tr"
 
+    # ? may even go down to 0.5
     def __init__(
         self,
         metadata_path,

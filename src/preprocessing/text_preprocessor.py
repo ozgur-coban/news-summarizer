@@ -11,10 +11,13 @@ except LookupError:
     nltk.download("stopwords")
 
 TURKISH_STOPWORDS = set(nltk.corpus.stopwords.words("turkish"))
+# TODO
+# ADDITIONAL_STOPWORDS = {"nin", "ın", "nın", "in"}
+# CUSTOM_STOPWORDS = TURKISH_STOPWORDS | ADDITIONAL_STOPWORDS
 
 
 class TurkishNLTKPreprocessor:
-    def __init__(self, path=None, do_lema=True):
+    def __init__(self, path=None, do_lema=False):
         self.path = path
         self.data = None
         self.do_lema = do_lema
@@ -50,6 +53,7 @@ class TurkishNLTKPreprocessor:
         text = unicodedata.normalize("NFKD", text)
         text = "".join([c for c in text if not unicodedata.combining(c)])
         text = re.sub(r"[^a-z0-9çğıöşü\s]", " ", text)
+        text = re.sub(r"\bamp\b", " ", text)  # <-- Remove standalone 'amp'
         text = re.sub(r"\s+", " ", text).strip()
         tokens = [t for t in text.split() if t not in TURKISH_STOPWORDS]
         return " ".join(tokens)

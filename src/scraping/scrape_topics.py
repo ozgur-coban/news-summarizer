@@ -3,12 +3,11 @@ import os
 import pandas as pd
 import re
 from bs4 import BeautifulSoup
-
-from preprocessing.preprocessor import TurkishPreprocessor
+from preprocessing.text_preprocessor import TurkishNLTKPreprocessor
 
 
 class TagExtractor:
-    def __init__(self, html_dir: str, preprocessor: TurkishPreprocessor):
+    def __init__(self, html_dir: str, preprocessor: TurkishNLTKPreprocessor):
         self.html_dir = html_dir
         self.preprocessor = preprocessor
         self.results = []
@@ -41,9 +40,8 @@ class TagExtractor:
                     html = file.read()
                     raw_topics = self.extract_raw_topics(html)
                     dates = self.extract_publish_date(html)
-                    normalized_topics = self.preprocessor.normalize_topic_list(
-                        raw_topics
-                    )
+                    # TODO add preprocessing
+                    normalized_topics = raw_topics
                     self.results.append(
                         {
                             "filename": filename,
