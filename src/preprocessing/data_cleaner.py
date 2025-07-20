@@ -5,6 +5,23 @@ class DataCleaner:
     def __init__(self, df: pd.DataFrame):
         self.data = df.copy()
 
+    @staticmethod
+    def load_data(file):
+        """Load the JSONL metadata file into a DataFrame."""
+        try:
+            df = pd.read_json(file, lines=True)
+            print(f"✅ Loaded {len(df)} records from {file}")
+            return df
+        except Exception as e:
+            print(f"❌ Failed to load data: {e}")
+            df = pd.DataFrame()  # Empty fallback
+            return df
+
+    def filter_columns(self, columns_to_keep=None):
+        if columns_to_keep:
+            self.data = self.data.filter(items=columns_to_keep)
+        return self.data
+
     def report_missing(self):
         """Report missing value counts per column."""
         missing = self.data.isnull().sum()
@@ -28,12 +45,21 @@ class DataCleaner:
             )
         if "IsActive" in self.data.columns:
             self.data["IsActive"] = self.data["IsActive"].astype(bool)
-        # Lowercase and strip whitespace for text fields
-        for col in ["Title", "Summary", "full_text", "prep_title", "prep_text"]:
-            if col in self.data.columns:
-                self.data[col] = self.data[col].astype(str).str.lower().str.strip()
-        # Remove leading/trailing spaces from all string/object columns
-        obj_cols = self.data.select_dtypes(include="object").columns
-        for col in obj_cols:
-            self.data[col] = self.data[col].str.strip()
+
         return self.data
+
+    def save_df(self, save_path):
+        if save_path:
+            self.data.to_json(
+                path_or_buf=f"{save_path}",
+                orient="records",
+                force_ascii=False,
+                lines=True,
+            )
+        else:
+            self.data.to_json(
+                path_or_buf="data.jsonl",
+                orient="records",
+                force_ascii=False,
+                lines=True,
+            )
