@@ -1,32 +1,24 @@
 import requests
 import json
 from bs4 import BeautifulSoup
-
-"""START_PAGE: Which results page to begin with (e.g., 10th page = older news).
-
-MAX_PAGES: How many pages (batches) to fetch (e.g., set to 10 to get 10x20 = 200 news).
-
-PAGE_SIZE: How many news per page (site default is 20).
-
-CATEGORY_ID: Which category to filter (e.g., 2 is "Gündem").
-
-KEYWORD: Search term ("***" for "all", or a specific word)."""
+# TODO merge with fetch_news_metadata_tr and make the url used based on parameter
+# Url used + headers
 
 
-# TODO the fact that everyday new news come in so pages get updated is a big problem for downloading from where you have left
-class AA_NewsMetadataFetcher:
-    BASE_URL = "https://www.aa.com.tr/tr/Search"
-    SEARCH_API_URL = "https://www.aa.com.tr/tr/Search/Search"
+class AA_EnglishNewsMetadataFetcher:
+    BASE_URL = "https://www.aa.com.tr/en/Search"
+    SEARCH_API_URL = "https://www.aa.com.tr/en/Search/Search"
 
     def __init__(
         self,
         start_page=1,
         max_pages=1,
-        category_id=2,
-        keyword="",
+        category_id=4,  # Example: 4 = "World" (change as needed)
+        keyword="* * *",  # For ALL news use "* * *"
         save_to_file=False,
         save_file_path="",
         is_inplace=True,
+        page_size=20,  # English endpoint allows up to 100
     ):
         self.start_page = start_page
         self.max_pages = max_pages
@@ -36,6 +28,7 @@ class AA_NewsMetadataFetcher:
         self.save_to_file = save_to_file
         self.save_file_path = save_file_path
         self.is_inplace = is_inplace
+        self.page_size = page_size
 
     def _get_session_and_token(self):
         s = requests.Session()
@@ -50,14 +43,21 @@ class AA_NewsMetadataFetcher:
 
     def _fetch_batch(self, session, csrf_token, page):
         data = {
-            "PageSize": 20,
+            "PageSize": self.page_size,
             "Page": page,
             "Keywords": self.keyword,
             "CategoryId": self.category_id,
             "TypeId": 1,
             "__RequestVerificationToken": csrf_token,
         }
-        resp = session.post(self.SEARCH_API_URL, data=data, timeout=15)
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Referer": self.BASE_URL,
+            "Origin": "https://www.aa.com.tr",
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        }
+        resp = session.post(self.SEARCH_API_URL, data=data, headers=headers, timeout=25)
         print(f"Status: {resp.status_code} (page {page})")
         resp.raise_for_status()
         return resp.json()
@@ -82,9 +82,7 @@ class AA_NewsMetadataFetcher:
                     with open(file_path, file_mode, encoding="utf-8") as f:
                         for doc in docs:
                             f.write(json.dumps(doc, ensure_ascii=False) + "\n")
-                file_mode = (
-                    "a"  # After first write, always append (prevents re-overwriting)
-                )
+                file_mode = "a"  # After first write, always append
             except Exception as e:
                 print(f"Error fetching page {page}:", e)
                 break

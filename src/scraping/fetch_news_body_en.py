@@ -5,18 +5,19 @@ import random
 import pandas as pd
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
+# TODO merger with fetch_news_body_tr
+# Url, parts is unnecessary
 
 
-class AAArticleBodyFetcher:
+class AA_EnglishArticleBodyFetcher:
     BASE_URL = "https://www.aa.com.tr"
 
-    # ? may even go down to 0.5
     def __init__(
         self,
         metadata_path,
         output_path,
-        min_delay=1,
-        max_retries=2,
+        min_delay=0.01,
+        max_retries=1,
         session_reset_every=20,
     ):
         self.metadata_path = metadata_path
@@ -25,9 +26,7 @@ class AAArticleBodyFetcher:
         self.max_retries = max_retries
         self.df = None
         self.ua = UserAgent()
-        self.session_reset_every = (
-            session_reset_every  # Re-init session every N requests
-        )
+        self.session_reset_every = session_reset_every
 
     def load_metadata(self):
         if self.metadata_path.endswith(".jsonl"):
@@ -49,15 +48,29 @@ class AAArticleBodyFetcher:
                 main = soup.find("div", class_="detay-icerik")
                 if main is None:
                     return ""
-                paragraphs = [p.get_text(strip=True) for p in main.find_all("p")]
+                # Optionally get location/city (e.g. GENEVA) at the top
+                parts = []
+
+                # Subheadings
+                headings = [h.get_text(strip=True) for h in main.find_all(["h3", "h4"])]
+
+                # Main body paragraphs (ENGLISH: <p class="selectionShareable">)
+                paragraphs = [
+                    p.get_text(strip=True)
+                    for p in main.find_all("p", class_="selectionShareable")
+                ]
+
+                # Filter out subscription/junk lines (ENGLISH ONLY)
                 filtered_paragraphs = [
                     p
                     for p in paragraphs
-                    if "Abonelik için lütfen iletişime geçiniz" not in p
-                    and "AA'nın WhatsApp kanallarına katılın" not in p
+                    if not (
+                        "Anadolu Agency website contains only" in p
+                        or "Please contact us for subscription options" in p
+                    )
                 ]
-                headings = [h.get_text(strip=True) for h in main.find_all(["h3", "h4"])]
-                full_text = "\n".join(headings + filtered_paragraphs)
+                # Compose full article
+                full_text = "\n".join(parts + headings + filtered_paragraphs)
                 if not full_text.strip():
                     return main.get_text(strip=True)
                 return full_text
@@ -87,7 +100,6 @@ class AAArticleBodyFetcher:
         with open(self.output_path, "a", encoding="utf-8") as out:
             session = requests.Session()
             for i, item in enumerate(records):
-                # Re-initialize session every N requests
                 if i % self.session_reset_every == 0:
                     session.close()
                     session = requests.Session()
@@ -114,20 +126,6 @@ class AAArticleBodyFetcher:
                 print(
                     f"[{i + 1}/{n_total}] Downloaded Id {news_id} ({len(text)} chars)."
                 )
-                # Randomized jitter: between min_delay and min_delay * 3 seconds
                 time.sleep(random.uniform(self.min_delay, self.min_delay * 3))
             session.close()
         print(f"Done! {n_success}/{n_total} articles downloaded.")
-
-
-if __name__ == "__main__":
-    import sys
-
-    # Usage: python fetch_articles.py metadata.jsonl aa_full_articles_{start}_{end}.jsonl start end
-    metadata_path = sys.argv[1]
-    output_path = sys.argv[2]
-    start = int(sys.argv[3])
-    end = int(sys.argv[4])
-
-    fetcher = AAArticleBodyFetcher(metadata_path, output_path)
-    fetcher.run(start=start, end=end)

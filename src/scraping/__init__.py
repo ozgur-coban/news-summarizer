@@ -1,10 +1,11 @@
 __all__ = [
-    "TagExtractor",
-    "NewsDownloader",
     "AA_NewsMetadataFetcher",
-    "AAArticleBodyFetcher",
+    "AA_ArticleBodyFetcher",
+    "AA_EnglishNewsMetadataFetcher",
+    "AA_EnglishArticleBodyFetcher",
 ]
-from .scrape_topics import TagExtractor
-from .scrape_news_from_home_page import NewsDownloader
-from .fetch_news_metadata import AA_NewsMetadataFetcher
-from .fetch_news_body import AAArticleBodyFetcher
+
+from .fetch_news_metadata_tr import AA_NewsMetadataFetcher
+from .fetch_news_body_tr import AA_ArticleBodyFetcher
+from .fetch_news_metadata_en import AA_EnglishNewsMetadataFetcher
+from .fetch_news_body_en import AA_EnglishArticleBodyFetcher
