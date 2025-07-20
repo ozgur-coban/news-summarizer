@@ -20,7 +20,7 @@ class DataCombiner:
 
     @staticmethod
     def join_df_inner(df_1, df_2):
-        joined_df = pd.merge(df_1, df_2, how="inner")
+        joined_df = pd.merge(df_1, df_2, how="inner", on="Id")
         return joined_df
 
     @staticmethod
@@ -31,5 +31,10 @@ class DataCombiner:
         print("columns", df.columns().tolist())
         print("random_rows", df.sample(5))
 
-    def run(self):
-        return DataCombiner.join_df_inner(self.metadata_df, self.body_df)
+    @staticmethod
+    def save(df: pd.DataFrame, path):
+        df.to_json(path_or_buf=path, orient="records", force_ascii=False, lines=True)
+
+    def run(self, path):
+        joined_df = DataCombiner.join_df_inner(self.metadata_df, self.body_df)
+        DataCombiner.save(df=joined_df, path=path)
