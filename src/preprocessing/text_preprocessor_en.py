@@ -48,17 +48,24 @@ class EnglishPreprocessor:
         Normalizes a string of comma-separated tags or a list of tags.
         - Converts to lowercase.
         - Removes extra whitespace.
+        - Removes duplicate tags (preserves order).
         """
         if pd.isna(tag_val) or not tag_val:
             return []
-
         if isinstance(tag_val, list):
             tags = tag_val
         else:
             tags = [t.strip() for t in str(tag_val).split(",")]
 
-        # Normalize each tag
-        return [tag.lower().strip() for tag in tags if tag]
+        # Normalize and deduplicate, preserving order
+        seen = set()
+        norm_tags = []
+        for tag in tags:
+            tag_clean = tag.lower().strip()
+            if tag_clean and tag_clean not in seen:
+                norm_tags.append(tag_clean)
+                seen.add(tag_clean)
+        return norm_tags
 
     def normalize_text(self, text: str) -> str:
         """

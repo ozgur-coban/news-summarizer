@@ -4,22 +4,42 @@ import matplotlib.pyplot as plt
 
 
 class TextAnalyzer:
-    def __init__(self, df, text_col="prep_text", id_col="Id", title_col="Title"):
-        self.df = df
-        self.text_col = text_col
+    def __init__(self, source_file, id_col="Id", title_col="Title"):
+        self.source_file = source_file
+        self.df = None
+        self._load_data()
+
         self.id_col = id_col
         self.title_col = title_col
 
-        # Add n_words column by counting words
-        self.df["n_words"] = self.df[self.text_col].apply(lambda x: len(str(x).split()))
+    def _load_data(self):
+        """Load the JSONL metadata file into a DataFrame."""
+        try:
+            self.df = pd.read_json(self.source_file, lines=True)
+            print(f"✅ Loaded {len(self.df)} records from {self.source_file}")
+        except Exception as e:
+            print(f"❌ Failed to load data: {e}")
+            self.df = pd.DataFrame()  # Empty fallback
 
-        # Filter out rows with fewer than 15 words
-        self.df = self.cut_short_articles(self.df)
+    @staticmethod
+    def _calculate_word_count(df, text_col, new_col="n_words"):
+        """
+        Adds/updates a word count column for the specified text column.
 
-    def cut_short_articles(self, df, min_word_count=15):
-        return df[df["n_words"] >= min_word_count]
+        Args:
+            df (pd.DataFrame): The DataFrame.
+            text_col (str): The name of the text column.
+            new_col (str): The name for the word count column (default: 'n_words').
+        Returns:
+            pd.DataFrame: The DataFrame with the new column.
+        """
+        df[new_col] = df[text_col].apply(
+            lambda x: len(str(x).split()) if pd.notnull(x) else 0
+        )
+        return df
 
-    def length_stats(self):
+    def length_stats(self, text_col):
+        TextAnalyzer._calculate_word_count(df=self.df, text_col=text_col)
         print("Article Count:", len(self.df))
         print("Min length (words):", self.df["n_words"].min())
         print("Max length (words):", self.df["n_words"].max())
@@ -38,7 +58,8 @@ class TextAnalyzer:
             .head(10)
         )
 
-    def length_hist(self, bins=30):
+    def length_hist(self, text_col, bins=30):
+        TextAnalyzer._calculate_word_count(df=self.df, text_col=text_col)
         plt.figure(figsize=(8, 4))
         self.df["n_words"].hist(bins=bins)
         plt.title("Distribution of Article Lengths (in words)")
@@ -46,18 +67,25 @@ class TextAnalyzer:
         plt.ylabel("Number of Articles")
         plt.show()
 
-    def most_common_words(self, n=30):
-        words = []
-        self.df[self.text_col].dropna().apply(lambda x: words.extend(str(x).split()))
-        word_freq = Counter(words)
-        print(f"Top {n} words:")
-        for word, freq in word_freq.most_common(n):
-            print(f"{word}: {freq}")
+    # TODO test
+    def most_common_words(self, text_col, n=30, ngram=1):
+        ngram_list = []
+        for text in self.df[text_col].dropna():
+            tokens = str(text).split()
+            if len(tokens) < ngram:
+                continue
+            # create n-grams
+            ngrams = zip(*[tokens[i:] for i in range(ngram)])
+            ngram_list.extend([" ".join(ng) for ng in ngrams])
+        ngram_freq = Counter(ngram_list)
+        print(f"Top {n} {ngram}-grams:")
+        for ngram_str, freq in ngram_freq.most_common(n):
+            print(f"{ngram_str}: {freq}")
         # Optional: plot
         plt.figure(figsize=(10, 4))
-        pd.Series(dict(word_freq.most_common(n))).plot(kind="bar")
-        plt.title(f"Top {n} Most Common Words")
-        plt.xlabel("Word")
+        pd.Series(dict(ngram_freq.most_common(n))).plot(kind="bar")
+        plt.title(f"Top {n} Most Common {ngram}-grams")
+        plt.xlabel(f"{ngram}-gram")
         plt.ylabel("Frequency")
         plt.show()
 
