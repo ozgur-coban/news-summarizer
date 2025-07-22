@@ -21,7 +21,14 @@ class DataCombiner:
     @staticmethod
     def join_df_inner(df_1, df_2):
         joined_df = pd.merge(df_1, df_2, how="inner", on="Id")
+        joined_df = joined_df.drop_duplicates(subset="Id", keep="first")
         return joined_df
+
+    @staticmethod
+    def join_df_union(df_1, df_2):
+        combined_df = pd.concat([df_1, df_2], ignore_index=True)
+        combined_df = combined_df.drop_duplicates(subset="Id", keep="first")
+        return combined_df
 
     @staticmethod
     def get_df_info(df):
@@ -35,6 +42,9 @@ class DataCombiner:
     def save(df: pd.DataFrame, path):
         df.to_json(path_or_buf=path, orient="records", force_ascii=False, lines=True)
 
-    def run(self, path):
-        joined_df = DataCombiner.join_df_inner(self.metadata_df, self.body_df)
+    def run(self, path, join_type: str):
+        if join_type == "inner":
+            joined_df = DataCombiner.join_df_inner(self.metadata_df, self.body_df)
+        elif join_type == "union":
+            joined_df = DataCombiner.join_df_union(self.metadata_df, self.body_df)
         DataCombiner.save(df=joined_df, path=path)

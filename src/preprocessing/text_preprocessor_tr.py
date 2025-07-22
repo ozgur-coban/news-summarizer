@@ -15,6 +15,7 @@ TURKISH_STOPWORDS = set(nltk.corpus.stopwords.words("turkish"))
 # CUSTOM_STOPWORDS = TURKISH_STOPWORDS | ADDITIONAL_STOPWORDS
 
 
+# TODO check turkish functions
 class TurkishPreprocessor:
     def __init__(
         self,

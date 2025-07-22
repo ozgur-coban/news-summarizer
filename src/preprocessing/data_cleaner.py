@@ -43,17 +43,39 @@ class DataCleaner:
         return self.data
 
     @staticmethod
-    def clean_aa_english_article(text):
+    # Paste the modified function here
+    def sub_clean_aa_english_article(text):
         if not isinstance(text, str):
             return text
-        text = text.lstrip()
-        match = re.match(
-            r"^(([A-Z][A-Z\s\-]+, [A-Za-z]+)|([A-Z][A-Z\s\-]+)|([A-Z], [A-Za-z]+)|(, [A-Za-z]+))\s*",
-            text,
-        )
-        if match:
-            text = text[match.end() :].lstrip()
 
+        # --- Start of Corrected Section ---
+
+        # This revised regex correctly handles unicode characters like 'ü'.
+        #
+        # How it works:
+        # ^(?:\"full_text\":\")?  - Optionally matches the 'full_text' wrapper.
+        # ([A-Z\s/]{3,})          - Matches a prefix of at least 3 uppercase letters, spaces, or slashes.
+        #                         (This prevents it from matching acronyms like "US").
+        # (?=[A-Z][^A-Z\s])      - This is the crucial lookahead. It ensures the prefix is followed by
+        #                         a capitalized word. It checks for:
+        #                         [A-Z]: An uppercase letter (like 'T' in 'Türkiye').
+        #                         [^A-Z\s]: A character that is NOT an uppercase letter or a space.
+        #                                  This correctly matches 'ü', 'u', etc.
+        #
+        prefix_pattern = r"^(?:\"full_text\":\")?([A-Z\s/]{3,})(?=[A-Z][^A-Z\s])"
+
+        # Remove the matched prefix from the text. The `strip` at the end
+        # will handle any leading space left by prefixes like "ANKARA / ".
+        text = re.sub(prefix_pattern, "", text).strip()
+
+        # --- End of Corrected Section ---
+
+        # The rest of your original logic remains unchanged.
+        # Remove final quote if it exists from the wrapper
+        if text.endswith('"'):
+            text = text[:-1]
+
+        # Remove footers
         footer_patterns = [
             r"Anadolu Agency website contains only.*",
             r"Please contact us for subscription options.*",
@@ -62,8 +84,8 @@ class DataCleaner:
         ]
         for pat in footer_patterns:
             text = re.sub(pat, "", text, flags=re.DOTALL)
-        text = text.strip()
-        return text
+
+        return text.strip()
 
     def clean_english_articles(self):
         if "Title" in self.data.columns:
@@ -74,8 +96,9 @@ class DataCleaner:
             after = len(self.data)
             print(f"Removed {before - after} 'Morning Briefing' articles.")
         if "full_text" in self.data.columns:
+            # The .apply call now uses the corrected function
             self.data["full_text"] = self.data["full_text"].apply(
-                self.clean_aa_english_article
+                self.sub_clean_aa_english_article
             )
         return self.data
 

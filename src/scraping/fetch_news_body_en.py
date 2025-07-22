@@ -16,7 +16,7 @@ class AA_EnglishArticleBodyFetcher:
         self,
         metadata_path,
         output_path,
-        min_delay=0.01,
+        min_delay=0.001,
         max_retries=1,
         session_reset_every=20,
     ):
