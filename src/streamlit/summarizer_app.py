@@ -764,7 +764,7 @@ if generate_clicked:
 
             start_time = time.time()
 
-            MODEL_PATH = "bart-english-news-summarizer"
+            # MODEL_PATH = "bart-english-news-summarizer"
             GUIDING_TAGS = []
             INPUT_TEXT = article
             NUM_Candidates_FOR_RERANKING = num_candidates
@@ -775,8 +775,15 @@ if generate_clicked:
             import spacy
 
             device = 0 if torch.cuda.is_available() else -1
-            tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
-            model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_PATH)
+            # ozgur-coban/bart-english-news-summarizer/
+            # tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+            # model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_PATH)
+            tokenizer = AutoTokenizer.from_pretrained(
+                "ozgur-coban/bart-english-news-summarizer"
+            )
+            model = AutoModelForSeq2SeqLM.from_pretrained(
+                "ozgur-coban/bart-english-news-summarizer"
+            )
 
             pipeline_beam = pipeline(
                 "summarization", model=model, tokenizer=tokenizer, device=device
