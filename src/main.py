@@ -15,16 +15,16 @@ from eda import Analyzer, TextAnalyzer
 
 
 def main():
-    # fetcher = AA_NewsMetadataFetcher(
-    #     start_page=1,
-    #     max_pages=1000,
-    #     category_id=2,
-    #     keyword="***",
-    #     save_to_file=True,
-    #     save_file_path="../data/raw/metadata/metadata_gundem_13-7-2025.json",
-    #     is_inplace=True,
-    # )
-    # fetcher.run()
+    fetcher = AA_NewsMetadataFetcher(
+        start_page=1,
+        max_pages=1000,
+        category_id=2,
+        keyword="***",
+        save_to_file=True,
+        save_file_path="../data/raw/metadata/metadata_gundem_13-7-2025.json",
+        is_inplace=True,
+    )
+    fetcher.run()
     # for title, link in fetcher.results:
     #     print(f"- {title}\n  {link}")
     # for i in [5, 12, 13, 17]:
@@ -166,6 +166,33 @@ def main():
     # most_common_tags = [x[0] for x in counter.most_common(5)]
     # analyzer.plot_tag_coverage_over_time(tag=most_common_tags[4], tags_col="tags_norm")
     #
+    # analyzer.tag_cooccurrence_matrix(tag_col="tags_norm")
+    #
+    # mtx = analyzer.get_tag_month_matrix(tag_col="tags_norm", date_col="date")
+    # Analyzer.plot_tag_temporal_shifts(mtx)
+    #
+    #
+    # emergence_df = analyzer.topic_emergence_decay(
+    #     tag_col="tags_norm", date_col="date", freq="M", min_window_count=2
+    # )
+    # print(
+    #     emergence_df[
+    #         ["window", "n_emergent", "emergent_tags", "n_decayed", "decayed_tags"]
+    #     ].tail(8)
+    # )
+    # Analyzer.plot_topic_emergence_decay(emergence_df=emergence_df)
+    #
+    # analyzer.plot_article_velocity_agg(
+    #     "Gaza", tag_col="tags_norm", date_col="date", time_unit="days", freq="M"
+    # )
+    #
+    # grouped, first, peak, last = analyzer.event_coverage_lifespan(
+    #     "Gaza", tag_col="tags_norm", date_col="date", freq="M"
+    # )
+    # if grouped is not None:
+    #     Analyzer.plot_event_lifespan(grouped, first, peak, last, freq="M", tag="Gaza")
+    #
+
     # text_analyzer = TextAnalyzer(
     #     source_file="../data/eda/22-7-2025_eda_filtered_preprocessed_eng.jsonl",
     #     title_col="Title_x",

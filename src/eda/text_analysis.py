@@ -67,7 +67,6 @@ class TextAnalyzer:
         plt.ylabel("Number of Articles")
         plt.show()
 
-    # TODO test
     def most_common_words(self, text_col, n=30, ngram=1):
         ngram_list = []
         for text in self.df[text_col].dropna():

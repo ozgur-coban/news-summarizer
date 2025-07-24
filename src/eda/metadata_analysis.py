@@ -1,5 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+from itertools import combinations
 from collections import Counter
 
 
@@ -205,3 +207,330 @@ class Analyzer:
         plt.tight_layout()
         plt.show()
         return monthly_counts
+
+    def tag_cooccurrence_matrix(self, tag_col="Tags", top_n=20, plot_heatmap=True):
+        """
+        Build and (optionally) plot a tag co-occurrence matrix.
+
+        Args:
+            df: DataFrame with a tag column (list of tags per article)
+            tag_col: Column name for tag lists
+            top_n: Only plot top N tags by frequency for readability
+            plot_heatmap: If True, display heatmap
+
+        Returns:
+            co_matrix: pd.DataFrame, tag co-occurrence matrix
+        """
+        # Count all tag co-occurrences
+        co_counter = Counter()
+        tag_freq = Counter()
+        for taglist in self.df[tag_col].dropna():
+            unique_tags = list(set(taglist))  # just in case
+            tag_freq.update(unique_tags)
+            for tag_pair in combinations(sorted(unique_tags), 2):
+                co_counter[tag_pair] += 1
+
+        # Get top N tags
+        top_tags = [tag for tag, _ in tag_freq.most_common(top_n)]
+
+        # Build matrix
+        matrix = pd.DataFrame(0, index=top_tags, columns=top_tags, dtype=int)
+        for (tag1, tag2), count in co_counter.items():
+            if tag1 in top_tags and tag2 in top_tags:
+                matrix.loc[tag1, tag2] = count
+                matrix.loc[tag2, tag1] = count  # symmetric
+
+        # Optional: plot as heatmap
+        if plot_heatmap:
+            plt.figure(figsize=(1 + 0.5 * top_n, 1 + 0.5 * top_n))
+            sns.heatmap(matrix, annot=True, fmt="d", cmap="Blues", linewidths=0.5)
+            plt.title(f"Tag Co-occurrence Heatmap (Top {top_n} Tags)")
+            plt.xlabel("Tag")
+            plt.ylabel("Tag")
+            plt.tight_layout()
+            plt.show()
+
+        return matrix
+
+    def get_tag_month_matrix(self, tag_col="Tags", date_col="date", top_n=10):
+        """
+        Returns a DataFrame: rows=month, cols=top N tags, values=article counts.
+        """
+        # Flatten: for each article and tag, record (month, tag)
+        rows = []
+        for idx, row in self.df.iterrows():
+            # if pd.isna(row[tag_col]) or not row[tag_col]:
+            #     continue
+            month = pd.to_datetime(row[date_col]).to_period("M")
+            for tag in set(row[tag_col]):  # dedupe just in case
+                rows.append({"month": month, "tag": tag})
+
+        tag_month_df = pd.DataFrame(rows)
+        # Count occurrences per (month, tag)
+        tag_month_counts = (
+            tag_month_df.groupby(["month", "tag"]).size().reset_index(name="count")
+        )
+        # Get top N tags overall
+        top_tags = (
+            tag_month_counts.groupby("tag")["count"]
+            .sum()
+            .sort_values(ascending=False)
+            .head(top_n)
+            .index.tolist()
+        )
+        tag_month_counts = tag_month_counts[tag_month_counts["tag"].isin(top_tags)]
+        # Pivot to month × tag table
+        matrix = (
+            tag_month_counts.pivot(index="month", columns="tag", values="count")
+            .fillna(0)
+            .astype(int)
+        )
+        # Sort by time
+        matrix = matrix.sort_index()
+        return matrix
+
+    @staticmethod
+    def plot_tag_temporal_shifts(matrix):
+        """
+        Plot a stacked area chart for tag frequency over time.
+        """
+        plt.figure(figsize=(12, 6))
+        matrix.plot.area(ax=plt.gca(), alpha=0.85)
+        plt.title("Temporal Topic Shifts (Top Tags)")
+        plt.xlabel("Month")
+        plt.ylabel("Article Count")
+        plt.legend(title="Tag", bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.show()
+
+    def topic_emergence_decay(
+        self, tag_col="Tags", date_col="date", freq="M", min_window_count=3
+    ):
+        """
+        Identify emerging and disappearing tags per time window (e.g., month).
+
+        Args:
+            df: DataFrame
+            tag_col: name of the column with tag lists
+            date_col: date column (must be datetime)
+            freq: window size ("M" for month, "W" for week, etc.)
+            min_window_count: only consider tags appearing at least this many times in a window
+
+        Returns:
+            emergence_df: DataFrame with window, emergent_tags, decayed_tags
+        """
+        # 1. Assign window
+        df = self.df.copy()
+        df["window"] = pd.to_datetime(df[date_col]).dt.to_period(freq)
+
+        # 2. Get tags per window
+        window_tags = {}
+        for window, group in df.groupby("window"):
+            tags = []
+            for taglist in group[tag_col]:
+                if isinstance(taglist, list):
+                    tags += taglist
+            tag_counts = pd.Series(tags).value_counts()
+            tags_set = set(tag_counts[tag_counts >= min_window_count].index)
+            window_tags[window] = tags_set
+
+        # 3. Compare window to previous/next
+        windows = sorted(window_tags)
+        results = []
+        for i, win in enumerate(windows):
+            current_tags = window_tags[win]
+            prev_tags = window_tags[windows[i - 1]] if i > 0 else set()
+            next_tags = window_tags[windows[i + 1]] if i < len(windows) - 1 else set()
+            emergent = current_tags - prev_tags
+            decayed = current_tags - next_tags  # Tags present now, gone next window
+            results.append(
+                {
+                    "window": win,
+                    "emergent_tags": sorted(list(emergent)),
+                    "decayed_tags": sorted(list(decayed)),
+                    "n_emergent": len(emergent),
+                    "n_decayed": len(decayed),
+                }
+            )
+        emergence_df = pd.DataFrame(results)
+        return emergence_df
+
+    @staticmethod
+    def plot_topic_emergence_decay(emergence_df, window_col="window"):
+        """
+        Plot number of emergent and decayed tags per window.
+        Optionally, annotate the most prominent tags.
+        """
+        plt.figure(figsize=(12, 6))
+        x = emergence_df[window_col].astype(str)
+        plt.plot(x, emergence_df["n_emergent"], label="Emergent tags", marker="o")
+        plt.plot(x, emergence_df["n_decayed"], label="Decayed tags", marker="x")
+        plt.title("Topic Emergence and Decay Over Time")
+        plt.xlabel("Time Window")
+        plt.ylabel("Number of Tags")
+        plt.legend()
+        plt.xticks(rotation=45, ha="right")
+        plt.tight_layout()
+        plt.show()
+
+        # Optional: print/annotate top emergent/decayed tags for recent windows
+        print("\nRecent Emergent and Decayed Tags:")
+        display_df = emergence_df[["window", "emergent_tags", "decayed_tags"]].tail(6)
+        print(display_df.to_string(index=False))
+
+    def plot_article_velocity_agg(
+        self,
+        tag,
+        tag_col="Tags",
+        date_col="date",
+        freq="M",
+        agg="mean",
+        time_unit="days",
+    ):
+        """
+        Plot aggregate article velocity for a tag per time window (week or month).
+        freq: "W" for week, "M" for month, etc.
+        agg: "mean" or "max" velocity per window.
+        time_unit: "days", "hours", or "minutes".
+        """
+        tag_lower = tag.lower()
+        mask = self.df[tag_col].apply(
+            lambda tags: tag_lower in [str(t).lower() for t in tags]
+            if isinstance(tags, list)
+            else False
+        )
+        tag_dates = self.df.loc[mask, date_col]
+        if tag_dates.empty:
+            print(f"No articles found for tag '{tag}'.")
+            return
+
+        dates_sorted = pd.to_datetime(tag_dates).sort_values()
+        deltas = dates_sorted.diff().dropna()
+        if time_unit == "days":
+            delta_vals = deltas.dt.total_seconds() / 86400
+            unit_str = "Days"
+        elif time_unit == "hours":
+            delta_vals = deltas.dt.total_seconds() / 3600
+            unit_str = "Hours"
+        else:
+            delta_vals = deltas.dt.total_seconds() / 60
+            unit_str = "Minutes"
+
+        velocity = 1 / delta_vals.replace(0, float("nan"))
+        vel_df = pd.DataFrame({"date": dates_sorted.iloc[1:], "velocity": velocity})
+        vel_df["window"] = vel_df["date"].dt.to_period(freq)
+
+        # Aggregate by window
+        if agg == "mean":
+            agg_vel = vel_df.groupby("window")["velocity"].mean()
+        elif agg == "max":
+            agg_vel = vel_df.groupby("window")["velocity"].max()
+        else:
+            raise ValueError("agg must be 'mean' or 'max'")
+
+        plt.figure(figsize=(10, 4))
+        agg_vel.plot(marker="o")
+        plt.title(f"{agg.capitalize()} Article Velocity for '{tag}' by {freq}")
+        plt.xlabel("Time Window")
+        plt.ylabel(f"Velocity (1/{unit_str})")
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+        # Print stats
+        print(f"{agg.capitalize()} velocity stats:\n{agg_vel.describe()}")
+
+        return agg_vel
+
+    def event_coverage_lifespan(
+        self, tag, tag_col="tags_norm", date_col="date", freq="D"
+    ):
+        """
+        For a given tag, find first, peak, and last article appearance, plus lifespan.
+        Optionally, return/plot daily or weekly trend.
+        """
+        tag_lower = tag.lower()
+        mask = self.df[tag_col].apply(
+            lambda tags: tag_lower in [str(t).lower() for t in tags]
+            if isinstance(tags, list)
+            else False
+        )
+        event_df = self.df.loc[mask].copy()
+        if event_df.empty:
+            print(f"No articles found for tag '{tag}'.")
+            return None
+
+        event_df["date"] = pd.to_datetime(event_df[date_col])
+        grouped = event_df.groupby(event_df["date"].dt.to_period(freq)).size()
+
+        first_appearance = event_df["date"].min()
+        last_appearance = event_df["date"].max()
+        peak_window = grouped.idxmax()
+        peak_count = grouped.max()
+        lifespan_days = (last_appearance - first_appearance).days
+
+        print(f"Event/tag: '{tag}'")
+        print(f"First appearance: {first_appearance.strftime('%Y-%m-%d')}")
+        print(f"Peak window: {peak_window} with {peak_count} articles")
+        print(f"Last appearance: {last_appearance.strftime('%Y-%m-%d')}")
+        print(f"Lifespan: {lifespan_days} days ({lifespan_days // 7} weeks)")
+        print(f"Total articles: {len(event_df)}")
+
+        # Optional: return for visualization
+        return grouped, first_appearance, peak_window, last_appearance
+
+    @staticmethod
+    def plot_event_lifespan(
+        grouped, first_appearance, peak_window, last_appearance, freq="D", tag=""
+    ):
+        """
+        Plot the article count over time for a tag, marking first, peak, and last.
+        """
+        plt.figure(figsize=(10, 4))
+        ax = grouped.plot(kind="bar", color="#1976D2", alpha=0.8)
+        plt.title(f"Coverage Lifespan for '{tag}' ({freq})")
+        plt.xlabel("Date")
+        plt.ylabel("Article Count")
+
+        # Get x positions for first, peak, last
+        x_labels = list(grouped.index.astype(str))
+        first_label = str(first_appearance.to_period(freq))
+        last_label = str(last_appearance.to_period(freq))
+        peak_label = str(peak_window)
+        for idx, label in enumerate(x_labels):
+            if label == first_label:
+                ax.bar(
+                    idx,
+                    grouped.iloc[idx],
+                    color="green",
+                    alpha=0.7,
+                    label="First"
+                    if "First" not in ax.get_legend_handles_labels()[1]
+                    else "",
+                )
+            if label == peak_label:
+                ax.bar(
+                    idx,
+                    grouped.iloc[idx],
+                    color="red",
+                    alpha=0.7,
+                    label="Peak"
+                    if "Peak" not in ax.get_legend_handles_labels()[1]
+                    else "",
+                )
+            if label == last_label:
+                ax.bar(
+                    idx,
+                    grouped.iloc[idx],
+                    color="purple",
+                    alpha=0.7,
+                    label="Last"
+                    if "Last" not in ax.get_legend_handles_labels()[1]
+                    else "",
+                )
+        # To avoid duplicate legend labels
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys())
+        plt.tight_layout()
+        plt.show()
