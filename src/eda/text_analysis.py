@@ -1,6 +1,7 @@
 import pandas as pd
 from collections import Counter
 import matplotlib.pyplot as plt
+import plotly.express as px
 
 
 class TextAnalyzer:
@@ -60,12 +61,19 @@ class TextAnalyzer:
 
     def length_hist(self, text_col, bins=30):
         TextAnalyzer._calculate_word_count(df=self.df, text_col=text_col)
-        plt.figure(figsize=(8, 4))
-        self.df["n_words"].hist(bins=bins)
-        plt.title("Distribution of Article Lengths (in words)")
-        plt.xlabel("Number of Words")
-        plt.ylabel("Number of Articles")
-        plt.show()
+        fig = px.histogram(
+            self.df,
+            x="n_words",
+            nbins=bins,
+            title="Distribution of Article Lengths (in words)",
+            labels={"n_words": "Number of Words"},
+            opacity=0.85,
+            color_discrete_sequence=["#1976D2"],
+        )
+        fig.update_layout(
+            xaxis_title="Number of Words", yaxis_title="Number of Articles", bargap=0.07
+        )
+        fig.show()
 
     def most_common_words(self, text_col, n=30, ngram=1):
         ngram_list = []
@@ -73,20 +81,29 @@ class TextAnalyzer:
             tokens = str(text).split()
             if len(tokens) < ngram:
                 continue
-            # create n-grams
             ngrams = zip(*[tokens[i:] for i in range(ngram)])
             ngram_list.extend([" ".join(ng) for ng in ngrams])
         ngram_freq = Counter(ngram_list)
         print(f"Top {n} {ngram}-grams:")
         for ngram_str, freq in ngram_freq.most_common(n):
             print(f"{ngram_str}: {freq}")
-        # Optional: plot
-        plt.figure(figsize=(10, 4))
-        pd.Series(dict(ngram_freq.most_common(n))).plot(kind="bar")
-        plt.title(f"Top {n} Most Common {ngram}-grams")
-        plt.xlabel(f"{ngram}-gram")
-        plt.ylabel("Frequency")
-        plt.show()
+
+        # Plotly barplot
+        top_ngrams = ngram_freq.most_common(n)
+        df_plot = pd.DataFrame(top_ngrams, columns=["Ngram", "Frequency"])
+        fig = px.bar(
+            df_plot,
+            x="Ngram",
+            y="Frequency",
+            title=f"Top {n} Most Common {ngram}-grams",
+            labels={"Ngram": f"{ngram}-gram", "Frequency": "Frequency"},
+            color="Frequency",
+            color_continuous_scale="Teal",
+        )
+        fig.update_layout(
+            xaxis_title=f"{ngram}-gram", yaxis_title="Frequency", xaxis_tickangle=-45
+        )
+        fig.show()
 
 
 # Usage Example:
