@@ -86,8 +86,8 @@ class Analyzer:
             # Else: skip (could be None, float, etc.)
         return tag_counter
 
-    def plot_tag_counts(self, col="Tags", top_n=20):
-        tag_counter = self.get_tag_counts(col)
+    def plot_tag_counts(self, tags_col="Tags", top_n=20):
+        tag_counter = self.get_tag_counts(tags_col)
         if not tag_counter:
             print("No tags found.")
             return
@@ -106,7 +106,8 @@ class Analyzer:
             yaxis=dict(categoryorder="total ascending"),
             height=max(400, int(top_n * 24)),
         )
-        fig.show()
+        # fig.show()
+        return fig
 
     # Date Analysis
     def articles_per_day(self, print_bool=False):
@@ -162,8 +163,9 @@ class Analyzer:
             title=f"Articles per Month Around {selected_date.strftime('%Y-%m-%d')}",
         )
         fig.update_layout(xaxis_tickangle=-45)
-        fig.show()
-        return monthly
+        # fig.show()
+        return fig
+        # return monthly
 
     def plot_trend(self, freq="D"):
         if freq == "D":
@@ -198,7 +200,8 @@ class Analyzer:
             showlegend=False,
         )
         fig.update_layout(xaxis_tickangle=-45)
-        fig.show()
+        # fig.show()
+        return fig
 
     def plot_tag_coverage_over_time(
         self, tag, date_col="date", tags_col="Tags", top_n_months=None, color="#009688"
@@ -246,8 +249,9 @@ class Analyzer:
             showlegend=False,
         )
         fig.update_layout(xaxis_tickangle=-45)
-        fig.show()
-        return monthly_counts
+        # fig.show()
+        return fig
+        # return monthly_counts
 
     def tag_cooccurrence_matrix(self, tag_col="Tags", top_n=20, plot_heatmap=True):
         co_counter = Counter()
@@ -281,7 +285,8 @@ class Analyzer:
                 yaxis_title="Tag",
                 height=80 + 36 * top_n,
             )
-            fig.show()
+            # fig.show()
+            return fig
 
         return matrix
 
@@ -342,7 +347,8 @@ class Analyzer:
             labels={time_col: "Month", "Count": "Article Count"},
         )
         fig.update_layout(xaxis_tickangle=-45)
-        fig.show()
+        # fig.show()
+        return fig
 
     def topic_emergence_decay(
         self, tag_col="Tags", date_col="date", freq="M", min_window_count=3
@@ -422,12 +428,13 @@ class Analyzer:
             legend_title_text=None,
             xaxis_tickangle=-45,
         )
-        fig.show()
+        # fig.show()
 
         # Optional: print/annotate top emergent/decayed tags for recent windows
         print("\nRecent Emergent and Decayed Tags:")
         display_df = emergence_df[["window", "emergent_tags", "decayed_tags"]].tail(6)
         print(display_df.to_string(index=False))
+        return fig
 
     def plot_article_velocity_agg(
         self,
@@ -496,9 +503,11 @@ class Analyzer:
             showlegend=False,
         )
         fig.update_layout(xaxis_tickangle=-45)
-        fig.show()
+        # fig.show()
         print(f"{agg.capitalize()} velocity stats:\n{agg_vel.describe()}")
-        return agg_vel
+        return fig
+
+        # return agg_vel
 
     def event_coverage_lifespan(
         self, tag, tag_col="tags_norm", date_col="date", freq="D"
@@ -578,7 +587,8 @@ class Analyzer:
             xaxis_tickangle=-45,
             barmode="group",
         )
-        fig.show()
+        # fig.show()
+        return fig
 
 
 '''

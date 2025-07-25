@@ -73,7 +73,8 @@ class TextAnalyzer:
         fig.update_layout(
             xaxis_title="Number of Words", yaxis_title="Number of Articles", bargap=0.07
         )
-        fig.show()
+        # fig.show()
+        return fig
 
     def most_common_words(self, text_col, n=30, ngram=1):
         ngram_list = []
@@ -103,7 +104,8 @@ class TextAnalyzer:
         fig.update_layout(
             xaxis_title=f"{ngram}-gram", yaxis_title="Frequency", xaxis_tickangle=-45
         )
-        fig.show()
+        # fig.show()
+        return fig
 
 
 # Usage Example:
