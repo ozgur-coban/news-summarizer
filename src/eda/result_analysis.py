@@ -25,6 +25,26 @@ class ResultAnalyzer:
         print("\nAverage Scores (rougeL pick):")
         print(self.rougeL_df[["berts_f1", "rougeL", "rouge1", "bleu", "meteor"]].mean())
 
+    def mean_scores_table(self):
+        # Select relevant metric columns
+        metric_cols = [
+            "berts_f1",
+            "berts_precision",
+            "berts_recall",
+            "rouge1",
+            "rougeL",
+            "bleu",
+            "meteor",
+        ]
+
+        bertS_means = self.bertS_df[metric_cols].mean().rename("bertS pick (mean)")
+        rougeL_means = self.rougeL_df[metric_cols].mean().rename("rougeL pick (mean)")
+
+        # Combine into a DataFrame
+        mean_table = pd.concat([bertS_means, rougeL_means], axis=1).T
+        print(mean_table)
+        return mean_table
+
     def module_pick_counts(self):
         print("Picked module counts (bertS):")
         print(self.bertS_df["picked_module"].value_counts())
@@ -38,6 +58,7 @@ class ResultAnalyzer:
                 self.rougeL_df.assign(type="rougeL pick"),
             ]
         )
+        # --- BERTScore F1 ---
         fig1 = px.histogram(
             plot_df,
             x="berts_f1",
@@ -63,6 +84,33 @@ class ResultAnalyzer:
         )
         fig1.update_traces(marker_line_width=1, marker_line_color="black")
         fig1.show()
+
+        # --- ROUGE-L ---
+        fig2 = px.histogram(
+            plot_df,
+            x="rougeL",
+            color="type",
+            nbins=bins,
+            barmode="overlay",
+            opacity=0.6,
+            title="ROUGE-L Distribution",
+            color_discrete_map={"bertS pick": "#1f77b4", "rougeL pick": "#ff7f0e"},
+        )
+        fig2.update_layout(
+            xaxis_title="ROUGE-L",
+            yaxis_title="Frequency",
+            font=dict(size=18),
+            title=dict(x=0.5, xanchor="center"),
+            legend_title_text="Pick Type",
+            bargap=0.1,
+            plot_bgcolor="rgba(245,245,245,1)",
+            paper_bgcolor="white",
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+            ),
+        )
+        fig2.update_traces(marker_line_width=1, marker_line_color="black")
+        fig2.show()
 
     def save_biggest_disagreements(
         self,
@@ -109,20 +157,20 @@ class ResultAnalyzer:
         )
         return corr1, corr2
 
-    def summary_length_vs_score(self):
-        self.bertS_df["summary_length"] = self.bertS_df["picked_summary"].apply(len)
-        corr = self.bertS_df["summary_length"].corr(self.bertS_df["berts_f1"])
+    def article_length_vs_score(self):
+        self.bertS_df["article_length"] = self.bertS_df["article_text"].apply(len)
+        corr = self.bertS_df["article_length"].corr(self.bertS_df["berts_f1"])
         print(
-            f"Correlation between picked summary length and BERTScore F1 (bertS pick): {corr:.3f}"
+            f"Correlation between picked article length and BERTScore F1 (bertS pick): {corr:.3f}"
         )
 
         fig = px.scatter(
             self.bertS_df,
-            x="summary_length",
+            x="article_length",
             y="berts_f1",
-            title="Picked Summary Length vs BERTScore F1 (bertS pick)",
+            title="Picked Article Length vs BERTScore F1 (bertS pick)",
             labels={
-                "summary_length": "Summary Length (chars)",
+                "article_length": "Article Length (chars)",
                 "berts_f1": "BERTScore F1",
             },
             opacity=0.6,

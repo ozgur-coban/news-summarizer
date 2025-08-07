@@ -109,6 +109,18 @@ class DataCleaner:
         print(f"Removed {before - after} duplicate articles by Id.")
         return self.data
 
+    def filter_short_texts(self, min_length=150):
+        if "full_text_minimal" in self.data.columns:
+            before = len(self.data)
+            self.data = self.data[
+                self.data["full_text_minimal"].apply(lambda x: len(x) >= min_length)
+            ]
+            after = len(self.data)
+            print(
+                f"Filtered out {before - after} articles with 'full_text_minimal' shorter than {min_length} characters."
+            )
+        return self.data
+
     def save_df(self, save_path):
         self.data.to_json(
             path_or_buf=save_path,
