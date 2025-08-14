@@ -5,8 +5,6 @@ import random
 import pandas as pd
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
-# TODO merger with fetch_news_body_tr
-# Url, parts is unnecessary
 
 
 class AA_EnglishArticleBodyFetcher:
