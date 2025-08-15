@@ -7,8 +7,6 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
-# --- Download NLTK resources if not already present ---
-# We need stopwords for filtering and wordnet for lemmatization.
 try:
     nltk.data.find("corpora/stopwords")
 except LookupError:
@@ -22,9 +20,6 @@ except LookupError:
 # --- Define English Stopwords ---
 # Using the standard NLTK English stopwords list.
 ENGLISH_STOPWORDS = set(stopwords.words("english"))
-# You can add custom words here if needed, e.g., {"news", "say", "said"}
-# CUSTOM_STOPWORDS = ENGLISH_STOPWORDS | {"news", "say", "said"}
-# --------------------------------
 
 
 class EnglishPreprocessor:

@@ -106,9 +106,3 @@ class TextAnalyzer:
         )
         # fig.show()
         return fig
-
-
-# Usage Example:
-# df = pd.read_json('your_cleaned_articles.jsonl', lines=True)
-# eda = NewsTextEDA(df)
-# eda.summary()

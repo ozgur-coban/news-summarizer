@@ -43,7 +43,6 @@ class DataCleaner:
         return self.data
 
     @staticmethod
-    # Paste the modified function here
     def sub_clean_aa_english_article(text):
         if not isinstance(text, str):
             return text
@@ -64,14 +63,10 @@ class DataCleaner:
         #
         prefix_pattern = r"^(?:\"full_text\":\")?([A-Z\s/]{3,})(?=[A-Z][^A-Z\s])"
 
-        # Remove the matched prefix from the text. The `strip` at the end
-        # will handle any leading space left by prefixes like "ANKARA / ".
         text = re.sub(prefix_pattern, "", text).strip()
 
         # --- End of Corrected Section ---
 
-        # The rest of your original logic remains unchanged.
-        # Remove final quote if it exists from the wrapper
         if text.endswith('"'):
             text = text[:-1]
 
@@ -128,11 +123,3 @@ class DataCleaner:
             force_ascii=False,
             lines=True,
         )
-
-
-# Usage Example:
-# df = DataCleaner.load_data("input.jsonl")
-# cleaner = DataCleaner(df)
-# cleaner.clean_english_articles()
-# cleaner.remove_duplicates()
-# cleaner.save_df("output.jsonl")

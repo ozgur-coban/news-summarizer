@@ -1,7 +1,6 @@
 import requests
 import json
 from bs4 import BeautifulSoup
-# TODO merge with fetch_news_metadata_tr and make the url used based on parameter
 # Url used + headers
 
 
