@@ -6,6 +6,18 @@ The model was trained on **100,000** Anadolu Ajansı articles, with **50,000** o
 The goal is to produce **concise, high-quality summaries** suitable for newswire usage.
 
 ---
+## 📊 Evaluation on Test Set
+
+The table below shows **average scores across all test articles** comparing BERTScore-picked outputs vs ROUGE-L-picked outputs.
+
+|                | berts_f1     | berts_precision | berts_recall | rouge1       | rougeL       | bleu         | meteor       |
+|----------------|--------------|-----------------|--------------|--------------|--------------|--------------|--------------|
+| **bertS pick** | 0.896151196  | 0.880494372     | 0.912829919  | 0.420760638  | 0.368872702  | 0.152196796  | 0.475370778  |
+| **rougeL pick**| 0.893670182  | 0.877660382     | 0.910755551  | 0.426010749  | 0.380812119  | 0.155462975  | 0.480405404  |
+
+You can also find all of the calculated test results in [Google Sheet](https://docs.google.com/spreadsheets/d/1YF5aBUunMOFllANsjRmI5fXQmlCaRYw8wmznnx3hFG8/edit?usp=sharing) 
+---
+
 
 ## 🚀 Usage
 
@@ -96,17 +108,6 @@ Candidates from all modules are deduplicated and evaluated to select the best ou
 ---
 
 
-## 📊 Evaluation on Test Set
-
-The table below shows **average scores across all test articles** comparing BERTScore-picked outputs vs ROUGE-L-picked outputs.
-
-|                | berts_f1     | berts_precision | berts_recall | rouge1       | rougeL       | bleu         | meteor       |
-|----------------|--------------|-----------------|--------------|--------------|--------------|--------------|--------------|
-| **bertS pick** | 0.896151196  | 0.880494372     | 0.912829919  | 0.420760638  | 0.368872702  | 0.152196796  | 0.475370778  |
-| **rougeL pick**| 0.893670182  | 0.877660382     | 0.910755551  | 0.426010749  | 0.380812119  | 0.155462975  | 0.480405404  |
-
-You can also find all of the calculated test results in [Google Sheet](https://docs.google.com/spreadsheets/d/1YF5aBUunMOFllANsjRmI5fXQmlCaRYw8wmznnx3hFG8/edit?usp=sharing) 
----
 
 ## 📦 Installation
 
